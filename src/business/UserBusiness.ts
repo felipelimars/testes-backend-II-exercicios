@@ -1,9 +1,11 @@
 import { UserDatabase } from "../database/UserDatabase"
+import { DeleteUserInputDTO, DeleteUserOutputDTO } from "../dtos/user/deleteUser.dto"
 import { GetUsersInputDTO, GetUsersOutputDTO } from "../dtos/user/getUsers.dto"
 import { LoginInputDTO, LoginOutputDTO } from "../dtos/user/login.dto"
 import { SignupInputDTO, SignupOutputDTO } from "../dtos/user/signup.dto"
 import { BadRequestError } from "../errors/BadRequestError"
 import { NotFoundError } from "../errors/NotFoundError"
+import { UnauthorizedError } from "../errors/UnauthorizedError"
 import { TokenPayload, USER_ROLES, User } from "../models/User"
 import { HashManager } from "../services/HashManager"
 import { IdGenerator } from "../services/IdGenerator"
@@ -131,4 +133,32 @@ export class UserBusiness {
 
     return output
   }
+
+public deleteUsers = async (input: DeleteUserInputDTO) => {
+  const { idToDelete, token } = input;
+
+  const payload = this.tokenManager.getPayload(token);
+
+  if (payload === null) {
+    throw new BadRequestError("token inválido");
+  }
+
+  if (typeof idToDelete !== "string") {
+    throw new BadRequestError("O campo 'id' deve ser umas string");
+  }
+
+  const userDBExists = await this.userDatabase.findUserById(idToDelete);
+
+  if (!userDBExists) {
+    throw new BadRequestError("Não foi possível encontrar o usuário");
+  }
+
+  await this.userDatabase.deleteUserById(idToDelete);
+
+  const output: DeleteUserOutputDTO = "Usuário deletado com sucesso"
+  
+  return output;
+};
+
+
 }
